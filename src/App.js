@@ -21,20 +21,24 @@ function App() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch("https://swapi.dev/api/films/");
+      const response = await fetch(
+        "https://react-http-b76b2-default-rtdb.firebaseio.com/movies.json"
+      );
       if (!response.ok) {
         throw new Error("Something went wrong ...Retrying");
       }
       const data = await response.json();
-      const transFormedData = data.results.map((moviesData) => {
-        return {
-          id: moviesData.episode_id,
-          title: moviesData.title,
-          openingText: moviesData.opening_crawl,
-          releaseDate: moviesData.release_date,
-        };
-      });
-      setMovies(transFormedData);
+      const loadedMovies = [];
+      for (const key in data) {
+        loadedMovies.push({
+          id: key,
+          title: data[key].title,
+          openingText: data[key].openingText,
+          releaseDate: data[key].releaseDate,
+        });
+      }
+
+      setMovies(loadedMovies);
     } catch (error) {
       console.log(error);
       setError(error.message);
@@ -49,9 +53,20 @@ function App() {
     fetchMoviesHandler();
   }, [fetchMoviesHandler]);
 
-  const addMovieHandler = (NewMovieObj) => {
-    console.log(NewMovieObj);
-  };
+  async function addMovieHandler(movie) {
+    const response = await fetch(
+      "https://react-http-b76b2-default-rtdb.firebaseio.com/movies.json",
+      {
+        method: "POST",
+        body: JSON.stringify(movie),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    const data = await response.json();
+    console.log(data);
+  }
 
   function handleCancelRetry() {
     // Clear the retry timeout and reset error state
@@ -59,9 +74,27 @@ function App() {
     setError(null);
   }
 
+  const deleteMovieHandler = async (movieId) => {
+    try {
+      await fetch(
+        `https://react-http-b76b2-default-rtdb.firebaseio.com/movies/${movieId}.json`,
+        {
+          method: "DELETE",
+        }
+      );
+      setMovies((prevMovies) =>
+        prevMovies.filter((movie) => movie.id !== movieId)
+      );
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   let content = <p>Found No Movies.</p>;
   if (movies.length > 0) {
-    content = <MoviesList movies={movies} />;
+    content = (
+      <MoviesList movies={movies} deleteMovieHandler={deleteMovieHandler} />
+    );
   }
   if (error) {
     content = (
