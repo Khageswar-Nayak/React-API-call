@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 
 import MoviesList from "./components/MoviesList";
 import "./App.css";
@@ -16,11 +16,11 @@ function App() {
     };
   }, [retryTimeout]);
 
-  async function fetchMoviesHandler() {
+  const fetchMoviesHandler = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch("https://swapi.dev/api/film/");
+      const response = await fetch("https://swapi.dev/api/films/");
       if (!response.ok) {
         throw new Error("Something went wrong ...Retrying");
       }
@@ -42,7 +42,11 @@ function App() {
       setRetryTimeout(timeout);
     }
     setIsLoading(false);
-  }
+  }, []);
+
+  useEffect(() => {
+    fetchMoviesHandler();
+  }, [fetchMoviesHandler]);
 
   function handleCancelRetry() {
     // Clear the retry timeout and reset error state
